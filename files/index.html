@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Marketing ROI Calculator</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d0f12;
+      --surface: #161a1f;
+      --surface2: #1e2430;
+      --border: rgba(255,255,255,0.08);
+      --border2: rgba(255,255,255,0.14);
+      --text: #f0f2f5;
+      --muted: #8a95a3;
+      --hint: #4a5568;
+      --teal: #1D9E75;
+      --teal-light: #5DCAA5;
+      --teal-dim: rgba(29,158,117,0.12);
+      --teal-glow: rgba(29,158,117,0.25);
+      --amber: #EF9F27;
+      --amber-dim: rgba(239,159,39,0.12);
+      --red: #E24B4A;
+      --red-dim: rgba(226,75,74,0.12);
+      --radius: 10px;
+      --radius-sm: 6px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+
+    /* ── HEADER ── */
+    header {
+      padding: 2rem 2rem 0;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 1.5rem;
+    }
+    .logo-mark {
+      width: 32px; height: 32px;
+      background: var(--teal);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .logo-mark svg { width: 18px; height: 18px; fill: #fff; }
+    .logo-name { font-size: 15px; font-weight: 600; letter-spacing: -0.02em; }
+    .logo-name span { color: var(--teal-light); }
+
+    h1 {
+      font-size: clamp(22px, 4vw, 32px);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin-bottom: 0.4rem;
+    }
+    .subtitle { font-size: 14px; color: var(--muted); margin-bottom: 1.5rem; }
+
+    /* ── TABS ── */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 0;
+    }
+    .tab {
+      padding: 10px 18px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      background: none;
+      color: var(--muted);
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .tab:hover:not(.active) { color: var(--text); }
+    .tab.active { color: var(--teal-light); border-bottom-color: var(--teal); }
+
+    /* ── MAIN ── */
+    main { max-width: 960px; margin: 0 auto; padding: 1.5rem 2rem 4rem; }
+
+    .panel { display: none; }
+    .panel.active {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    /* ── INPUTS ── */
+    .inputs-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+    }
+    .card-title {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--hint);
+      margin-bottom: 1.25rem;
+    }
+    .field { margin-bottom: 1rem; }
+    .field:last-child { margin-bottom: 0; }
+    .field label {
+      display: block;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 5px;
+    }
+    .input-wrap {
+      display: flex;
+      align-items: center;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      transition: border-color 0.15s;
+    }
+    .input-wrap:focus-within { border-color: var(--teal); box-shadow: 0 0 0 3px var(--teal-glow); }
+    .input-pre, .input-suf {
+      padding: 0 10px;
+      font-size: 13px;
+      color: var(--hint);
+      user-select: none;
+      white-space: nowrap;
+    }
+    .input-wrap input {
+      flex: 1;
+      background: none;
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 500;
+      padding: 8px 0;
+      min-width: 0;
+    }
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+    /* ── RESULTS ── */
+    .results-col { display: flex; flex-direction: column; gap: 1rem; }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .metric {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+    }
+    .metric.good {
+      background: var(--teal-dim);
+      border-color: rgba(29,158,117,0.3);
+    }
+    .metric.warn {
+      background: var(--amber-dim);
+      border-color: rgba(239,159,39,0.25);
+    }
+    .metric.bad {
+      background: var(--red-dim);
+      border-color: rgba(226,75,74,0.25);
+    }
+    .metric.full { grid-column: 1 / -1; }
+    .metric-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+    .metric.good .metric-label { color: var(--teal-light); }
+    .metric.warn .metric-label { color: var(--amber); }
+    .metric-value { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; color: var(--text); }
+    .metric.good .metric-value { color: #9FE1CB; }
+    .metric.warn .metric-value { color: var(--amber); }
+
+    .divider {
+      grid-column: 1 / -1;
+      height: 1px;
+      background: var(--border);
+      border: none;
+      margin: 2px 0;
+    }
+
+    /* status indicator */
+    .roi-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      font-size: 13px;
+    }
+    .status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .status-dot.green { background: var(--teal); box-shadow: 0 0 6px var(--teal); }
+    .status-dot.amber { background: var(--amber); box-shadow: 0 0 6px var(--amber); }
+    .status-dot.red { background: var(--red); box-shadow: 0 0 6px var(--red); }
+
+    .note-box {
+      font-size: 12px;
+      color: var(--muted);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      line-height: 1.6;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      text-align: center;
+      font-size: 12px;
+      color: var(--hint);
+      padding: 2rem;
+    }
+    footer a { color: var(--teal-light); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 640px) {
+      header, main { padding-left: 1rem; padding-right: 1rem; }
+      .panel.active { grid-template-columns: 1fr; }
+      .tab { padding: 8px 12px; font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-mark">
+      <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+    </div>
+    <div class="logo-name">Marketing <span>ROI</span> Calculator</div>
+  </div>
+  <h1>Know your numbers.</h1>
+  <p class="subtitle">Real-time ad performance calculator — eCommerce · Lead Gen · EdTech/SaaS</p>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('ec', this)">eCommerce</button>
+    <button class="tab" onclick="switchTab('lg', this)">Lead Generation</button>
+    <button class="tab" onclick="switchTab('et', this)">EdTech / SaaS</button>
+  </div>
+</header>
+
+<main>
+
+  <!-- ═══════════ eCOMMERCE ═══════════ -->
+  <div class="panel active" id="panel-ec">
+    <div class="inputs-card">
+      <p class="card-title">Inputs — Ad Campaign</p>
+
+      <div class="field">
+        <label>CPC — Cost Per Click</label>
+        <div class="input-wrap"><span class="input-pre">€</span><input type="number" id="ec-cpc" value="1.00" step="0.01" min="0.01" oninput="calcEc()"></div>
+      </div>
+      <div class="field">
+        <label>Monthly Ad Spend</label>
+        <div class="input-wrap"><span class="input-pre">€</span><input type="number" id="ec-spend" value="3000" step="100" min="0" oninput="calcEc()"></div>
+      </div>
+      <div class="field">
+        <label>Website Conversion Rate</label>
+        <div class="input-wrap"><input type="number" id="ec-cr" value="2.5" step="0.1" min="0" max="100" oninput="calcEc()"><span class="input-suf">%</span></div>
+      </div>
+      <div class="field">
+        <label>Average Order Value</label>
+        <div class="input-wrap"><span class="input-pre">€</span><input type="number" id="ec-aov" value="65" step="1" min="0" oninput="calcEc()"></div>
+      </div>
+      <div class="field">
+        <label>Average Profit Margin</label>
+        <div class="input-wrap"><input type="number" id="ec-margin" value="40" step="1" min="0" max="100" oninput="calcEc()"><span class="input-suf">%</span></div>
+      </div>
+      <div class="field">
+        <label>Customer Lifetime Value (LTV)</label>
+        <div class="input-wrap"><span class="input-pre">€</span><input type="number" id="ec-ltv" value="150" step="10" min="0" oninput="calcEc()"></div>
+      </div>
+      <div class="field">
+        <label>Monthly Management Fee</label>
+        <div class="input-wrap"><span class="input-pre">€</span><input type="number" id="ec-fee" value="0" step="50" min="0" oninput="calcEc()"></div>
+      </div>
+    </div>
+
+    <div class="results-col">
+      <div class="metric-grid">
+        <div class="metric"><div class="metric-label">Visitors</div><div class="metric-value" id="ec-r-visitors">—</div></div>
+        <div class="metric"><div class="metric-label">Sales</div><div class="metric-value" id="ec-r-sales">—</div></div>
+        <div class="metric"><div class="metric-label">Revenue</div><div class="metric-value" id="ec-r-revenue">—</div></div>
+        <div class="metric"><div class="metric-label">Cost per Acquisition</div><div class="metric-value" id="ec-r-cpa">—</div></div>
+        <hr class="divider">
+        <div class="metric"><div class="metric-label">ROAS</div><div class="metric-value" id="ec-r-roas">—</div></div>
+        <div class="metric"><div class="metric-label">Breakeven ROAS</div><div class="metric-value" id="ec-r-beroas">—</div></div>
+        <div class="metric"><div class="metric-label">ROI</div><div class="metric-value" id="ec-r-roi">—</div></div>
+        <div class="metric"><div class="metric-label">True ROAS (with LTV)</div><div class="metric-value" id="ec-r-troas">—</div></div>
+        <hr class="divider">
+        <div class="metric good"><div class="metric-label">Profit — Month 1</div><div class="metric-value" id="ec-r-profit">—</div></div>
+        <div class="metric good"><div class="metric-label">Lifetime Revenue</div><div class="metric-value" id="ec-r-ltv-rev">—</div></div>
+        <div class="metric good full"><div class="metric-label">Lifetime Profit</div><div class="metric-value" id="ec-r-ltv-profit">—</div></div>
+      </div>
+      <div class="roi-status" id="ec-status">
+        <span class="status-dot amber" id="ec-dot"></span>
+        <span id="ec-status-text">Enter your numbers to see the verdict.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ LEAD GEN ═══════════ -->
+  <div class="panel" id="panel-lg">
+    <div class="inputs-card">
+      <p class="card-title">Inputs — Lead Campaign</p>
+      <div class="field"><label>CPC — Cost Per Click</label><div class="input-wrap"><span class="input-pre">€</span><input type="number" id="lg-cpc" value="2.50" step="0.10" min="0.01" oninput="calcLg()"></div></div>
+      <div class="field"><label>Monthly Ad Spend</label><div class="input-wrap"><span class="input-pre">€</span><input type="number" id="lg-spend" value="2000" step="100" min="0" oninput="calcLg()"></div></div>
+      <div class="field"><label>Click → Lead Rate</label><div class="input-wrap"><input type="number" id="lg-lr" value="6" step="0.5" min="0" max="100" oninput="calcLg()"><span class="input-suf">%</span></div></div>
+      <div class="field"><label>Lead → Sale Close Rate</label><div class="input-wrap"><input type="number" id="lg-close" value="25" step="1" min="0" max="100" oninput="calcLg()"><span class="input-suf">%</span></div></div>
+      <div class="field"><label>Average Deal / Project Value</label><div class="input-wrap"><span class="input-pre">€</span><input type="number" id="lg-deal" value="3500" step="100" min="0" oninput="calcLg()"></div></div>
+      <div class="field"><label>Profit Margin</label><div class="input-wrap"><input type="number" id="lg-margin" value="35" step="1" min="0" max="100" oninput="calcLg()"><span class="input-suf">%</span></div></div>
+      <div class="field"><label>Customer Lifetime Value (LTV)</label><div class="input-wrap"><span class="input-pre">€</span><input type="number" id="lg-ltv" value="8000" step="500" min="0" oninput="calcLg()"></div></div>
+      <div class="field"><label>Monthly Management Fee</label><div class="input-wrap"><span class="input-pre">€</span><input type="number" id="lg-fee" value="500" step="50" min="0" oninput="calcLg()"></div></div>
+    </div>
+
+    <div class="results-col">
+      <div class="metric-grid">
+        <div class="metric"><div class="metric-label">Clicks</div><div class="metric-value" id="lg-r-clicks">—</div></div>
+        <div class="metric"><div class="metric-label">Leads</div><div class="metric-value" id="lg-r-leads">—</div></div>
+        <div class="metric"><div class="metric-label">Sales Closed</div><div class="metric-value" id="lg-r-sales">—</div></div>
+        <div class="metric"><div class="metric-label">Revenue</div><div class="metric-value" id="lg-r-revenue">—</div></div>
+        <hr class="divider">
+        <div class="metric"><div class="metric-label">Cost per Lead (CPL)</div><div class="metric-value" id="lg-r-cpl">—</div></div>
+        <div class="metric"><div class="metric-label">Cost per Sale (CPA)</div><div class="metric-value" id="lg-r-cpa">—</div></div>
+        <div class="metric"><div class="metric-label">ROAS</div><div class="metric-value" id="lg-r-roas">—</div></div>
+        <div class="metric"><div class="metric-label">ROI</div><div class="metric-value" id="lg-r-roi">—</div></div>
+        <hr class="divider">
+        <div class="metric good"><div class="metric-label">Profit — Month 1</div><div class="metric-value" id="lg-r-profit">—</div></div>
+        <div class="metric good"><div class="metric-label">Lifetime Revenue</div><div class="metric-value" id="lg-r-ltv-rev">—</div></div>
+        <div class="metric good full"><div class="metric-label">Lifetime Profit</div><div class="metric-value" id="lg-r-ltv-profit">—</div></div>
+      </div>
+      <div class="roi-status">
+        <span class="status-dot amber" id="lg-dot"></span>
+        <span id="lg-status-text">Enter your numbers to see the verdict.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ EDTECH / SAAS ═══════════ -->
+  <div class="panel" id="panel-et">
+    <div class="inputs-card">
+      <p class="card-title">Inputs — Subscription Campaign</p>
+      <div class="field"><label>CPC — Cost Per Click</label><div class="input-wrap"><span class="input-pre">€</span><input type="number" id="et-cpc" value="1.50" step="0.10" min="0.01" oninput="calcEt()"></div></div>
+      <div class="field"><label>Monthly Ad Spend</label><div class="input-wrap"><span class="input-pre">€</span><input type="number" id="et-spend" value="3000" step="100" min="0" oninput="calcEt()"></div></div>
+      <div class="field"><label>Click → Free Trial Rate</label><div class="input-wrap"><input type="number" id="et-tr" value="8" step="0.5" min="0" max="100" oninput="calcEt()"><span class="input-suf">%</span></div></div>
+      <div class="field"><label>Trial → Paid Conversion</label><div class="input-wrap"><input type="number" id="et-conv" value="25" step="1" min="0" max="100" oninput="calcEt()"><span class="input-suf">%</span></div></div>
+      <div class="field"><label>Monthly Subscription Price</label><div class="input-wrap"><span class="input-pre">€</span><input type="number" id="et-price" value="49" step="1" min="0" oninput="calcEt()"></div></div>
+      <div class="field"><label>Avg Months Retained</label><div class="input-wrap"><input type="number" id="et-months" value="12" step="1" min="1" oninput="calcEt()"></div></div>
+      <div class="field"><label>Profit Margin</label><div class="input-wrap"><input type="number" id="et-margin" value="70" step="1" min="0" max="100" oninput="calcEt()"><span class="input-suf">%</span></div></div>
+      <div class="field"><label>Monthly Management Fee</label><div class="input-wrap"><span class="input-pre">€</span><input type="number" id="et-fee" value="500" step="50" min="0" oninput="calcEt()"></div></div>
+    </div>
+
+    <div class="results-col">
+      <div class="metric-grid">
+        <div class="metric"><div class="metric-label">Clicks</div><div class="metric-value" id="et-r-clicks">—</div></div>
+        <div class="metric"><div class="metric-label">Free Trials</div><div class="metric-value" id="et-r-trials">—</div></div>
+        <div class="metric"><div class="metric-label">Paid Students</div><div class="metric-value" id="et-r-paid">—</div></div>
+        <div class="metric"><div class="metric-label">Monthly MRR</div><div class="metric-value" id="et-r-mrr">—</div></div>
+        <hr class="divider">
+        <div class="metric"><div class="metric-label">Customer LTV</div><div class="metric-value" id="et-r-ltv">—</div></div>
+        <div class="metric"><div class="metric-label">Cost per Trial (CPL)</div><div class="metric-value" id="et-r-cpl">—</div></div>
+        <div class="metric"><div class="metric-label">CPA (paid student)</div><div class="metric-value" id="et-r-cpa">—</div></div>
+        <div class="metric"><div class="metric-label">ROAS (lifetime)</div><div class="metric-value" id="et-r-roas">—</div></div>
+        <hr class="divider">
+        <div class="metric good"><div class="metric-label">Total Revenue (LTV)</div><div class="metric-value" id="et-r-revenue">—</div></div>
+        <div class="metric good"><div class="metric-label">ROI</div><div class="metric-value" id="et-r-roi">—</div></div>
+        <div class="metric good full"><div class="metric-label">Lifetime Profit</div><div class="metric-value" id="et-r-profit">—</div></div>
+      </div>
+      <div class="roi-status">
+        <span class="status-dot amber" id="et-dot"></span>
+        <span id="et-status-text">Enter your numbers to see the verdict.</span>
+      </div>
+      <div class="note-box">ROAS and ROI are calculated over the full customer lifetime, not month 1.</div>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  Built for marketers who know their numbers &nbsp;·&nbsp;
+  <a href="https://github.com/" target="_blank">GitHub</a>
+</footer>
+
+<script>
+  /* ─── helpers ─── */
+  const v    = id => parseFloat(document.getElementById(id).value) || 0;
+  const set  = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  const fmtE = (n, sym='€') => (isFinite(n) && n !== null) ? sym + Math.round(n).toLocaleString('de-DE') : '—';
+  const fmtX = n => (isFinite(n) && n !== null) ? n.toFixed(2) + 'x' : '—';
+  const fmtN = n => (isFinite(n) && n !== null) ? Math.round(n).toLocaleString('de-DE') : '—';
+  const fmtP = n => (isFinite(n) && n !== null) ? (n * 100).toFixed(1) + '%' : '—';
+
+  function setStatus(prefix, roi) {
+    const dot  = document.getElementById(prefix + '-dot');
+    const text = document.getElementById(prefix + '-status-text');
+    if (!dot || !text || roi === null || !isFinite(roi)) {
+      dot.className  = 'status-dot amber';
+      text.textContent = 'Enter your numbers to see the verdict.';
+      return;
+    }
+    if (roi > 0.3) {
+      dot.className  = 'status-dot green';
+      text.textContent = 'Profitable — this campaign is generating real returns.';
+    } else if (roi > 0) {
+      dot.className  = 'status-dot amber';
+      text.textContent = 'Marginal — profitable but room to improve.';
+    } else {
+      dot.className  = 'status-dot red';
+      text.textContent = 'Loss — ad spend exceeds margin. Adjust CPC, AOV or conversion rate.';
+    }
+  }
+
+  /* ─── eCommerce ─── */
+  function calcEc() {
+    const cpc = v('ec-cpc'), spend = v('ec-spend'), cr = v('ec-cr') / 100;
+    const aov = v('ec-aov'), margin = v('ec-margin') / 100, ltv = v('ec-ltv'), fee = v('ec-fee');
+    const visitors  = cpc > 0 ? spend / cpc : 0;
+    const sales     = visitors * cr;
+    const revenue   = sales * aov;
+    const cpa       = sales > 0 ? spend / sales : null;
+    const roas      = spend > 0 ? revenue / spend : null;
+    const beroas    = margin > 0 ? 1 / margin : null;
+    const totalCost = spend + fee;
+    const profit    = revenue * margin - totalCost;
+    const roi       = totalCost > 0 ? profit / totalCost : null;
+    const ltvRev    = sales * ltv;
+    const ltvProfit = ltvRev * margin - totalCost;
+    const troas     = spend > 0 ? (ltvRev * margin) / spend : null;
+
+    set('ec-r-visitors',  fmtN(visitors));
+    set('ec-r-sales',     fmtN(sales));
+    set('ec-r-revenue',   fmtE(revenue));
+    set('ec-r-cpa',       fmtE(cpa));
+    set('ec-r-roas',      fmtX(roas));
+    set('ec-r-beroas',    beroas ? beroas.toFixed(2) + 'x' : '—');
+    set('ec-r-roi',       roi !== null ? (roi * 100).toFixed(1) + '%' : '—');
+    set('ec-r-troas',     fmtX(troas));
+    set('ec-r-profit',    fmtE(profit));
+    set('ec-r-ltv-rev',   fmtE(ltvRev));
+    set('ec-r-ltv-profit',fmtE(ltvProfit));
+    setStatus('ec', roi);
+  }
+
+  /* ─── Lead Gen ─── */
+  function calcLg() {
+    const cpc = v('lg-cpc'), spend = v('lg-spend'), lr = v('lg-lr') / 100;
+    const close = v('lg-close') / 100, deal = v('lg-deal'), margin = v('lg-margin') / 100;
+    const ltv = v('lg-ltv'), fee = v('lg-fee');
+    const clicks    = cpc > 0 ? spend / cpc : 0;
+    const leads     = clicks * lr;
+    const sales     = leads * close;
+    const revenue   = sales * deal;
+    const cpl       = leads > 0 ? spend / leads : null;
+    const cpa       = sales > 0 ? spend / sales : null;
+    const totalCost = spend + fee;
+    const roas      = spend > 0 ? revenue / spend : null;
+    const profit    = revenue * margin - totalCost;
+    const roi       = totalCost > 0 ? profit / totalCost : null;
+    const ltvRev    = sales * ltv;
+    const ltvProfit = ltvRev * margin - totalCost;
+
+    set('lg-r-clicks',     fmtN(clicks));
+    set('lg-r-leads',      fmtN(leads));
+    set('lg-r-sales',      fmtN(sales));
+    set('lg-r-revenue',    fmtE(revenue));
+    set('lg-r-cpl',        fmtE(cpl));
+    set('lg-r-cpa',        fmtE(cpa));
+    set('lg-r-roas',       fmtX(roas));
+    set('lg-r-roi',        roi !== null ? (roi * 100).toFixed(1) + '%' : '—');
+    set('lg-r-profit',     fmtE(profit));
+    set('lg-r-ltv-rev',    fmtE(ltvRev));
+    set('lg-r-ltv-profit', fmtE(ltvProfit));
+    setStatus('lg', roi);
+  }
+
+  /* ─── EdTech / SaaS ─── */
+  function calcEt() {
+    const cpc = v('et-cpc'), spend = v('et-spend'), tr = v('et-tr') / 100;
+    const conv = v('et-conv') / 100, price = v('et-price'), months = v('et-months');
+    const margin = v('et-margin') / 100, fee = v('et-fee');
+    const clicks    = cpc > 0 ? spend / cpc : 0;
+    const trials    = clicks * tr;
+    const paid      = trials * conv;
+    const mrr       = paid * price;
+    const ltv       = price * months;
+    const totalRev  = paid * ltv;
+    const cpl       = trials > 0 ? spend / trials : null;
+    const cpa       = paid > 0 ? spend / paid : null;
+    const totalCost = spend + fee;
+    const roas      = spend > 0 ? (totalRev * margin) / spend : null;
+    const profit    = totalRev * margin - totalCost;
+    const roi       = totalCost > 0 ? profit / totalCost : null;
+
+    set('et-r-clicks',  fmtN(clicks));
+    set('et-r-trials',  fmtN(trials));
+    set('et-r-paid',    fmtN(paid));
+    set('et-r-mrr',     fmtE(mrr));
+    set('et-r-ltv',     fmtE(ltv));
+    set('et-r-cpl',     fmtE(cpl));
+    set('et-r-cpa',     fmtE(cpa));
+    set('et-r-roas',    fmtX(roas));
+    set('et-r-revenue', fmtE(totalRev));
+    set('et-r-roi',     roi !== null ? (roi * 100).toFixed(1) + '%' : '—');
+    set('et-r-profit',  fmtE(profit));
+    setStatus('et', roi);
+  }
+
+  /* ─── Tab switch ─── */
+  function switchTab(id, btn) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-' + id).classList.add('active');
+  }
+
+  /* ─── Init ─── */
+  calcEc(); calcLg(); calcEt();
+</script>
+</body>
+</html>
